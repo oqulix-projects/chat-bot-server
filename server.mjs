@@ -13,9 +13,7 @@ import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { fileURLToPath } from "url";
 
 // firebase sdk
-const serviceAccount = JSON.parse(
-  readFileSync(new URL("./serviceAccountKey.json", import.meta.url))
-);
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 // Initialize Firebase Admin (must run once)
 if (!admin.apps.length) {
@@ -151,7 +149,12 @@ app.post("/ask", async (req, res) => {
 
 
 // Speech to text
-const sttClient = new speech.SpeechClient();
+const sttClient = process.env.GCP_SERVICE_ACCOUNT_JSON
+  ? new speech.SpeechClient({
+      credentials: JSON.parse(process.env.GCP_SERVICE_ACCOUNT_JSON),
+      projectId: process.env.GCP_PROJECT_ID,
+    })
+  : new speech.SpeechClient();
 
 app.post("/stt", uploadAudio.single("audio"), async (req, res) => {
   try {
