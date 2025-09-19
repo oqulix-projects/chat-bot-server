@@ -1,0 +1,253 @@
+{
+  "event": {
+    "id": "rssdi2025",
+    "name": "RSSDI 2025 - 53rd Annual Conference",
+    "theme": "Innovations in Diabetes Care and Research",
+    "dates": {
+      "start": "2025-11-06",
+      "end": "2025-11-09"
+    },
+    "timings": {
+      "day1": "08:00 - 20:00",
+      "day2": "08:00 - 21:00",
+      "day3": "08:00 - 21:00",
+      "day4": "08:00 - 17:00"
+    },
+    "description": "The RSSDI 2025 annual conference brings together healthcare professionals, researchers, students, and industry leaders to explore the latest developments in diabetes research, clinical management, medical devices, and digital healthcare solutions. The event will feature keynote lectures, panel discussions, workshops, poster presentations, an exhibition, and networking sessions.",
+    "venue": {
+      "name": "Lulu Bolgatty International Convention Centre (LBICC)",
+      "address": "Bolgatty Island, Kochi, Kerala 682504, India",
+      "map_url": "https://www.hyatt.com/en-US/hotel/india/grand-hyatt-kochi-bolgatty/cokgh",
+      "description": "LBICC is a state-of-the-art convention centre located by the waterfront, featuring multiple ballrooms, breakout halls, exhibition foyers, and outdoor lawns, all integrated with Grand Hyatt Kochi Bolgatty.",
+      "contact": {
+        "phone": "+91 484 266 1234",
+        "email": "kochi.grand@hyatt.com"
+      }
+    },
+    "organizers": [
+      {
+        "role": "Organizing Chairman",
+        "name": "Dr. Jothydev Kesavadev",
+        "bio": "Endocrinologist and founder of Jothydev’s Diabetes Research Centre."
+      },
+      {
+        "role": "Organizing Secretary",
+        "name": "Dr. Anita Nambiar",
+        "bio": "Consultant diabetologist with expertise in gestational diabetes management."
+      },
+      {
+        "role": "National Scientific Chairman",
+        "name": "Dr. Anuj Maheshwari",
+        "bio": "Specialist in clinical diabetes research and education."
+      },
+      {
+        "role": "Treasurer",
+        "name": "Dr. Rafiq Mohamed",
+        "bio": "Consultant endocrinologist and senior faculty at Kerala RSSDI chapter."
+      }
+    ]
+  },
+  "rooms": [
+    {
+      "id": "vembanad",
+      "name": "Vembanad Ballroom",
+      "floor": "Ground",
+      "capacity": 2000,
+      "description": "The largest pillarless ballroom at LBICC, typically used for plenary sessions, keynote addresses, and high-attendance ceremonies. Equipped with advanced sound systems, dual screens, and simultaneous translation booths.",
+      "usage": ["Plenary Sessions", "Opening Ceremony", "Gala Dinner"]
+    },
+    {
+      "id": "liwa_i",
+      "name": "Liwa I",
+      "floor": "Ground",
+      "capacity": 450,
+      "description": "A medium-sized hall connected to Liwa II and III. Frequently used for parallel breakout sessions and medium workshops.",
+      "usage": ["Workshops", "Industry Symposiums"]
+    },
+    {
+      "id": "liwa_ii",
+      "name": "Liwa II",
+      "floor": "Ground",
+      "capacity": 330,
+      "description": "Connected to Liwa I and Liwa III. Often combined with others to create larger halls. Suitable for breakout technical sessions.",
+      "usage": ["Panel Discussions", "Sponsor Workshops"]
+    },
+    {
+      "id": "liwa_iii",
+      "name": "Liwa III",
+      "floor": "Ground",
+      "capacity": 330,
+      "description": "A flexible breakout space, often used for sponsor sessions and smaller technical meetings.",
+      "usage": ["Roundtable Meetings", "Corporate Talks"]
+    },
+    {
+      "id": "diwan",
+      "name": "Diwan",
+      "floor": "Ground",
+      "capacity": 300,
+      "description": "An intimate meeting hall ideal for panel discussions and clinical debates. Equipped with tiered seating.",
+      "usage": ["Debates", "Focused Discussions"]
+    },
+    {
+      "id": "natika",
+      "name": "Natika",
+      "floor": "Ground",
+      "capacity": 120,
+      "description": "Small meeting room used for poster presentations, student competitions, and informal gatherings.",
+      "usage": ["Poster Sessions", "Student Abstracts"]
+    }
+  ],
+  "facilities": {
+    "restrooms": [
+      {
+        "id": "RR1",
+        "location": "Near Vembanad Foyer, Ground Floor",
+        "type": "Male & Female",
+        "accessible": true
+      },
+      {
+        "id": "RR2",
+        "location": "Near Liwa Foyer, Ground Floor",
+        "type": "Male & Female",
+        "accessible": true
+      },
+      {
+        "id": "RR3",
+        "location": "Adjacent to Diwan Hall",
+        "type": "Unisex",
+        "accessible": true
+      }
+    ],
+    "helpdesks": [
+      {
+        "id": "HD1",
+        "location": "Liwa Foyer, near Registration Desk",
+        "services": ["Delegate Registration", "Badge Printing", "Lost & Found"]
+      },
+      {
+        "id": "HD2",
+        "location": "Vembanad Foyer Entrance",
+        "services": ["Information Desk", "Technical Support"]
+      }
+    ],
+    "food_and_beverage": [
+      {
+        "id": "FB1",
+        "location": "Palm Lawns",
+        "services": ["Buffet Lunch", "Evening Snacks", "Beverages"]
+      },
+      {
+        "id": "FB2",
+        "location": "Liwa Foyer Cafe",
+        "services": ["Coffee", "Tea", "Light Snacks"]
+      }
+    ],
+    "emergency_services": [
+      {
+        "id": "EM1",
+        "location": "First Aid Room, near Natika Hall",
+        "staffed_by": "Medical Volunteers",
+        "equipment": ["First Aid Kit", "Stretcher", "Emergency Oxygen"]
+      },
+      {
+        "id": "EM2",
+        "location": "Ambulance Parking, South Exit",
+        "available_24x7": true
+      }
+    ]
+  },
+  "exhibits": [
+    {
+      "id": "S1",
+      "exhibitor": "Glucometer Co.",
+      "hall": "Liwa Foyer",
+      "position": "Left side of entrance, near RR2",
+      "category": "Gold Sponsor",
+      "services": ["Product Demo", "Free Samples", "Discount Vouchers"],
+      "description": "Showcasing the latest generation of blood glucose meters and mobile app integrations."
+    },
+    {
+      "id": "S2",
+      "exhibitor": "PharmaPlus",
+      "hall": "Vembanad Foyer",
+      "position": "Entrance-right, near Registration",
+      "category": "Platinum Sponsor",
+      "services": ["Consultation", "Product Display"],
+      "description": "Exhibiting innovative oral diabetes medications and insulin delivery systems."
+    },
+    {
+      "id": "S3",
+      "exhibitor": "MediTech Wearables",
+      "hall": "Liwa Foyer",
+      "position": "Opposite Helpdesk",
+      "category": "Vendor",
+      "services": ["Device Trials", "Mobile App Demonstrations"],
+      "description": "Demonstrating smart insulin pumps, wearable glucose monitors, and AI-driven health tracking."
+    },
+    {
+      "id": "S4",
+      "exhibitor": "Healthy Life Foods",
+      "hall": "Palm Lawns (Outdoor Pavilion)",
+      "position": "Food Court Corner",
+      "category": "Partner",
+      "services": ["Product Sampling", "Nutrition Counseling"],
+      "description": "Offering sugar-free, diabetic-friendly snacks and beverages."
+    }
+  ],
+  "sessions": [
+    {
+      "id": "SE1",
+      "title": "Opening Ceremony & Keynote",
+      "room": "vembanad",
+      "time": "2025-11-06 09:00 - 10:30",
+      "speaker": "Dr. Anuj Maheshwari",
+      "description": "Inauguration of RSSDI 2025 followed by keynote on the future of diabetes care in India."
+    },
+    {
+      "id": "SE2",
+      "title": "Digital Health & Diabetes Apps",
+      "room": "liwa_i",
+      "time": "2025-11-07 11:00 - 12:30",
+      "speaker": "Panel of experts",
+      "description": "Discussion on mobile health apps, AI in diabetes care, and telemedicine integration."
+    },
+    {
+      "id": "SE3",
+      "title": "Poster Presentation Competition",
+      "room": "natika",
+      "time": "2025-11-08 14:00 - 16:00",
+      "speaker": "Student Delegates",
+      "description": "Students and young researchers present posters on innovative diabetes research."
+    }
+  ],
+  "transportation": {
+    "nearest_airport": {
+      "name": "Cochin International Airport",
+      "distance_km": 32,
+      "transfer_time_min": 45
+    },
+    "nearest_railway": {
+      "name": "Ernakulam Junction Railway Station",
+      "distance_km": 5,
+      "transfer_time_min": 15
+    },
+    "parking": {
+      "onsite": true,
+      "capacity": 500,
+      "fees": "Free for delegates",
+      "overflow": "Additional parking at Bolgatty Palace Grounds"
+    },
+    "drop_off_points": [
+      {
+        "id": "D1",
+        "location": "Liwa Foyer Main Entrance",
+        "description": "Delegate and VIP drop-off zone with wheelchair access."
+      },
+      {
+        "id": "D2",
+        "location": "Vembanad Foyer Entrance",
+        "description": "Exhibitor and logistics drop-off area."
+      }
+    ]
+  }
+}

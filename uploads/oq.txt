@@ -1,0 +1,17 @@
+Oqulix Private Limited
+Oqulix Private Limited is an Indian company founded in 2023, based in Kerala. It is officially registered as an active private company with the Ministry of Corporate Affairs (MCA). The company's business is focused on providing virtual reality (VR) software solutions for various sectors, including healthcare, education, and entertainment.
+
+Happy Moves: The Product
+Happy Moves is Oqulix's key product, described as an immersive VR therapy platform. It's designed to make physical and cognitive rehabilitation more engaging and effective for patients by turning traditional exercises into interactive games. The platform is primarily a business-to-business (B2B) solution aimed at therapy centers, hospitals, and clinics.
+
+Key features of Happy Moves include:
+
+Gamified Therapy: It uses games and virtual environments to motivate patients, making repetitive therapy sessions more enjoyable. This approach is intended to improve patient adherence and outcomes.
+
+Targeted Rehabilitation: The software provides specific exercises for conditions affecting the neck, shoulders, hands, and for enhancing cognitive functions like memory and attention. It is particularly used for patients recovering from strokes, neurological conditions, or musculoskeletal injuries.
+
+Real-Time Tracking: Therapists can use a companion mobile app to monitor a patient's progress in real-time, customize exercise plans, and track their movements and responses.
+
+Evidence-Based: The platform is built on the principle of neuroplasticity, which is the brain's ability to form new connections. The repetitive, purposeful movements in the VR environment help activate neural pathways for recovery.
+
+Happy Moves is optimized for devices like the Meta Quest 2, and Oqulix offers both one-time purchase and subscription models for its clients.
