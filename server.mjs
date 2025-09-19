@@ -269,6 +269,6 @@ app.post("/speak", async (req, res) => {
 
 // ===================== SERVER START =====================
 // const PORT = process.env.PORT ?? 4000;
-app.listen(PORT, () => {
+app.listen(() => {
   console.log(`🚀 Server is running`);
 });
