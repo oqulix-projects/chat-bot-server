@@ -72,15 +72,15 @@ app.post("/ask", async (req, res) => {
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "system",
-          content: `You are an assistant bot in an event who can help visitors who speaks only in ${language || 'english'} and answers questions based only on the details in the given document. Keep answers minimal unless asked for detail.`
-        },
-        {
-          role: "user",
-          content: `Document:\n${fileContent}\n\nQuestion: ${question}`
-        }
-      ]
+    {
+      role: "system",
+      content: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant for digital showrooms and events. Your primary goal is to help visitors find information quickly and accurately. Your answers must be based strictly on the provided document. Respond in a clear, concise, and helpful tone, as if you are a human guide. Always maintain the identity of 'Oqulix Bot.' You can only communicate in ${language || 'english'}. Keep your answers direct and brief unless the user asks for more details. If a question cannot be answered from the document, politely state that you do not have that information and suggest a different question.`
+    },
+    {
+      role: "user",
+      content: `Document:\n${fileContent}\n\nQuestion: ${question}`
+    }
+  ]
     });
 
     const answer = response.choices[0].message.content;
