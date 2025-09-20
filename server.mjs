@@ -13,8 +13,7 @@ import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { fileURLToPath } from "url";
 
 // firebase sdk
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 // Initialize Firebase Admin (must run once)
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -48,37 +47,7 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'biz-rag-backend', time: new Date().toISOString() });
 });
 
-// Upload document route
-// app.post('/upload', upload.single('file'), (req, res) => {
-//   if (!req.file) {
-//     return res.status(400).json({ error: "No file uploaded" });
-//   }
 
-//   const filePath = req.file.path;
-//   let parsedData = null;
-
-//   try {
-//     // Read uploaded file
-//     const fileContent = fs.readFileSync(filePath, "utf-8");
-
-//     // Parse if it's JSON
-//     if (req.file.mimetype === "application/json" || req.file.originalname.endsWith(".json")) {
-//       parsedData = JSON.parse(fileContent);
-//     } else {
-//       parsedData = fileContent; // fallback for txt or other files
-//     }
-
-//     res.json({
-//       message: "JSON file uploaded successfully",
-//       file: req.file.filename,
-//       parsedData // return parsed JSON so frontend can verify
-//     });
-
-//   } catch (err) {
-//     console.error("Error parsing uploaded file:", err);
-//     return res.status(500).json({ error: "Failed to parse uploaded JSON" });
-//   }
-// });
 
 console.log("API Key loaded:", process.env.OPENAI_API_KEY ? "✅ yes" : "❌ no");
 
@@ -126,35 +95,12 @@ app.post("/ask", async (req, res) => {
 
 
 
-// app.post("/ask", async (req, res) => {
-//   try {
-//     const { question, document, language } = req.body;
-
-//     if (!question || !document) {
-//       return res.status(400).json({ error: "Question and document are required" });
-//     }
-
-//     // 🔹 Instead of calling GPT, make a fake reply
-//     const fakeAnswer = "This is a sample response generated only for testing. The quick brown fox jumps over the lazy dog while testing voice playback functionality smoothly.";
-
-//     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-//     res.json({ question, answer: fakeAnswer, document });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Error processing request" });
-//   }
-// });
 
 
 
 
 // Speech to text
-const sttClient = process.env.GCP_SERVICE_ACCOUNT_JSON
-  ? new speech.SpeechClient({
-      credentials: JSON.parse(process.env.GCP_SERVICE_ACCOUNT_JSON),
-      projectId: process.env.GCP_PROJECT_ID,
-    })
-  : new speech.SpeechClient();
+const sttClient = new speech.SpeechClient();
 
 app.post("/stt", uploadAudio.single("audio"), async (req, res) => {
   try {
@@ -268,7 +214,7 @@ app.post("/speak", async (req, res) => {
 
 
 // ===================== SERVER START =====================
-// const PORT = process.env.PORT ?? 4000;
-app.listen(() => {
-  console.log(`🚀 Server is running`);
+const PORT = process.env.PORT ?? 4000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
