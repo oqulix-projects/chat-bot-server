@@ -12,6 +12,8 @@ import speech from "@google-cloud/speech";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { fileURLToPath } from "url";
 
+import fetch from "node-fetch";
+
 // firebase sdk
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 // Initialize Firebase Admin (must run once)
@@ -54,7 +56,7 @@ console.log("API Key loaded:", process.env.OPENAI_API_KEY ? "✅ yes" : "❌ no"
 // Ask question (OpenAI)
 app.post("/ask", async (req, res) => {
   try {
-    const { question, userId, language } = req.body;
+    const { question, userId, language, previousAnswer } = req.body;
 
     if (!question || !userId) {
       return res.status(400).json({ error: "Question and userId are required" });
@@ -74,7 +76,7 @@ app.post("/ask", async (req, res) => {
       messages: [
     {
       role: "system",
-      content: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant for digital showrooms and events. Your primary goal is to help visitors find information quickly and accurately. Your answers must be based strictly on the provided document. Respond in a clear, concise, and helpful tone, as if you are a human guide. Always maintain the identity of 'Oqulix Bot.' You can only communicate in ${language || 'english'}. Keep your answers direct and brief unless the user asks for more details. If a question cannot be answered from the document, politely state that you do not have that information and suggest a different question.`
+      content: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond in a clear, concise, and helpful tone, as if you are a human guide. Always maintain the identity of 'Oqulix Bot.' You can only communicate in ${language || 'english'}. Keep your answers direct and brief unless the user asks for more details. If a question cannot be answered from the document, politely state that you do not have that information and suggest a different question.Also take into consideration of your previous answer which is ${previousAnswer} while answering questions that might require follow up`
     },
     {
       role: "user",
@@ -170,7 +172,7 @@ app.post("/speak", async (req, res) => {
   try {
     const {
       text,
-      languageCode = "en-US",
+      languageCode = "ml-IN",
       voiceName,              // optional
       speakingRate = 1.0,
       pitch = 0.0,
@@ -211,6 +213,83 @@ app.post("/speak", async (req, res) => {
     res.status(500).json({ error: "Error generating speech" });
   }
 });
+
+
+app.post("/speakEleven", async (req, res) => {
+  try {
+    const {
+      text,
+      languageCode = "en-US",
+      voiceName = "Rachel", // Default ElevenLabs voice name
+      speakingRate = .5,
+      pitch = 0.0,
+      audioEncoding = "MP3",
+    } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Missing 'text'" });
+    }
+
+    const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
+    if (!elevenLabsApiKey) {
+      return res.status(500).json({ error: "Missing ElevenLabs API key" });
+    }
+
+    // Prepare voice ID or name (you can map your voiceName to a specific ID if you want)
+    const voiceId = await getVoiceIdByName(voiceName, elevenLabsApiKey);
+    console.log(voiceId);
+    
+
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: "POST",
+      headers: {
+        "xi-api-key": elevenLabsApiKey,
+        "Content-Type": "application/json",
+        "Accept": audioEncoding === "OGG_OPUS" ? "audio/ogg" : "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_multilingual_v2", // Supports multiple languages
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          speaking_rate: speakingRate, // optional
+          style: pitch, // optional, maps roughly to expressiveness
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("ElevenLabs TTS error:", error);
+      return res.status(500).json({ error: "Error generating speech" });
+    }
+
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    res.setHeader("Content-Type", audioEncoding === "OGG_OPUS" ? "audio/ogg" : "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+
+    return res.end(audioBuffer, "binary");
+  } catch (err) {
+    console.error("TTS error:", err);
+    res.status(500).json({ error: "Error generating speech" });
+  }
+});
+
+// Optional helper function
+async function getVoiceIdByName(voiceName, apiKey) {
+  try {
+    const res = await fetch("https://api.elevenlabs.io/v1/voices", {
+      headers: { "xi-api-key": apiKey },
+    });
+    const data = await res.json();
+    const voice = data.voices.find(v => v.name.toLowerCase() === voiceName.toLowerCase());
+    return voice ? voice.voice_id : "21m00Tcm4TlvDq8ikWAM"; // Default to Rachel
+  } catch (err) {
+    console.error("Error fetching voices:", err);
+    return "21m00Tcm4TlvDq8ikWAM"; // fallback voice ID
+  }
+}
 
 
 // ===================== SERVER START =====================
