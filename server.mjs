@@ -308,22 +308,15 @@ app.post("/askClaude", async (req, res) => {
   try {
     const { question, userId, language, previousAnswer } = req.body;
 
-    if (!question || !userId) {
-      return res.status(400).json({ error: "Question and userId are required" });
-    }
-
     const filePath = `instances/${userId}.json`;
     const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
     const fileContent = fileBuffer.toString("utf-8");
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // ✅ Streaming headers
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Transfer-Encoding", "chunked");
-
-    const stream = await client.messages.stream({
-      model: "claude-haiku-4-5-20251001", // 💡 fast & cheap, like gpt-4o-mini
+    // ✅ No streaming — just get full response
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       system: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}`,
       messages: [
@@ -334,17 +327,14 @@ app.post("/askClaude", async (req, res) => {
       ]
     });
 
-    for await (const chunk of stream) {
-      if (chunk.type === "content_block_delta" && chunk.delta?.text) {
-        res.write(chunk.delta.text); // 🔥 stream token
-      }
-    }
+    const answer = response.content[0].text;
 
-    res.end();
+    // ✅ Return JSON just like OpenAI did
+    res.json({ answer });
 
   } catch (err) {
     console.error(err);
-    res.status(500).end("Error processing request");
+    res.status(500).json({ error: "Error processing request" });
   }
 });
 
