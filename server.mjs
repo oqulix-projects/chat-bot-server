@@ -11,6 +11,7 @@ import speech from "@google-cloud/speech";
 // ✅ Import Google Cloud Text-to-Speech
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { fileURLToPath } from "url";
+import Anthropic from "@anthropic-ai/sdk";
 
 import fetch from "node-fetch";
 
@@ -62,36 +63,43 @@ app.post("/ask", async (req, res) => {
       return res.status(400).json({ error: "Question and userId are required" });
     }
 
-    // Build file path in Firebase Storage
     const filePath = `instances/${userId}.json`;
-
-    // Download file from Firebase Storage
     const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
     const fileContent = fileBuffer.toString("utf-8");
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const response = await client.chat.completions.create({
+    // ✅ IMPORTANT: set streaming headers
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
+
+    const stream = await client.chat.completions.create({
       model: "gpt-4o-mini",
+      stream: true,   // 🔥 THIS ENABLES STREAMING
       messages: [
-    {
-      role: "system",
-      content: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond in a clear, concise, and helpful tone, as if you are a human guide. Always maintain the identity of 'Oqulix Bot.' You can only communicate in ${language || 'english'}. Keep your answers direct and brief unless the user asks for more details. If a question cannot be answered from the document, politely state that you do not have that information and suggest a different question.Also take into consideration of your previous answer which is ${previousAnswer} while answering questions that might require follow up`
-    },
-    {
-      role: "user",
-      content: `Document:\n${fileContent}\n\nQuestion: ${question}`
-    }
-  ]
+        {
+          role: "system",
+          content: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}`
+        },
+        {
+          role: "user",
+          content: `Document:\n${fileContent}\n\nQuestion: ${question}`
+        }
+      ]
     });
 
-    const answer = response.choices[0].message.content;
+    for await (const chunk of stream) {
+      const token = chunk.choices[0]?.delta?.content;
+      if (token) {
+        res.write(token);   // 🔥 send token immediately
+      }
+    }
 
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.json({ question, answer, userId });
+    res.end(); // finish stream
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error processing request" });
+    res.status(500).end("Error processing request");
   }
 });
 
@@ -292,8 +300,57 @@ async function getVoiceIdByName(voiceName, apiKey) {
 }
 
 
+// CLAUDE API END POINT
+console.log("API Key loaded:", process.env.ANTHROPIC_API_KEY ? "✅ yes" : "❌ no");
+
+// Ask question (Anthropic Claude)
+app.post("/askClaude", async (req, res) => {
+  try {
+    const { question, userId, language, previousAnswer } = req.body;
+
+    if (!question || !userId) {
+      return res.status(400).json({ error: "Question and userId are required" });
+    }
+
+    const filePath = `instances/${userId}.json`;
+    const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
+    const fileContent = fileBuffer.toString("utf-8");
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    // ✅ Streaming headers
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
+
+    const stream = await client.messages.stream({
+      model: "claude-haiku-4-5-20251001", // 💡 fast & cheap, like gpt-4o-mini
+      max_tokens: 1024,
+      system: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}`,
+      messages: [
+        {
+          role: "user",
+          content: `Document:\n${fileContent}\n\nQuestion: ${question}`
+        }
+      ]
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.type === "content_block_delta" && chunk.delta?.text) {
+        res.write(chunk.delta.text); // 🔥 stream token
+      }
+    }
+
+    res.end();
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).end("Error processing request");
+  }
+});
+
+
 // ===================== SERVER START =====================
 const PORT = process.env.PORT ?? 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
