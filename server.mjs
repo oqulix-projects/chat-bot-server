@@ -318,7 +318,7 @@ app.post("/askClaude", async (req, res) => {
     const response = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
-      system: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly wiht less words conveying the answer to the question only and not responding with too much information. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}`,
+      system: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly wiht less words conveying the answer to the question only and not responding with too much information. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}. also structure your answer with punctuations accordingly for google TTS to recognize and speak`,
       messages: [
         {
           role: "user",
