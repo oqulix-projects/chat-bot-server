@@ -38,7 +38,7 @@ app.use(cors({
     'http://localhost:5173',
     'https://localhost:5173',
     'http://localhost:3000',
-    'https://chat-bot-vert-iota.vercel.app', // ✅ Your Vercel URL
+    'https://chat-bot-vert-iota.vercel.app','http://192.168.1.35:5173' // ✅ Your Vercel URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
