@@ -366,50 +366,50 @@ Consider the previous answer: ${previousAnswer}.`,
 });
 
 // asking groq
-app.post("/askGroq", async (req, res) => {
-  try {
-    const { question, userId, language, previousAnswer } = req.body;
+// app.post("/askGroq", async (req, res) => {
+//   try {
+//     const { question, userId, language, previousAnswer } = req.body;
 
-    const filePath = `instances/${userId}.json`;
-    const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
-    const fileContent = fileBuffer.toString("utf-8");
+//     const filePath = `instances/${userId}.json`;
+//     const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
+//     const fileContent = fileBuffer.toString("utf-8");
 
-    const client = new Groq({
-      apiKey: process.env.GROQ_API_KEY
-    });
+//     const client = new Groq({
+//       apiKey: process.env.GROQ_API_KEY
+//     });
 
-    // ✅ Updated to latest available model
-    const response = await client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "system",
-          content: `You are "Oqulix Bot", a friendly and knowledgeable assistant. 
-Answer strictly using only the provided document. 
-Keep responses clear, brief, and directly answer the question without extra details. 
-Respond only in ${language || "english"}. 
-Use proper punctuation for natural Google TTS speech. 
-When speaking in non-English languages, use natural conversational style and mix common English words where appropriate instead of literal dictionary translations. 
-Consider the previous answer: ${previousAnswer}.`
-        },
-        {
-          role: "user",
-          content: `Document:\n${fileContent}\n\nQuestion: ${question}`
-        }
-      ]
-    });
+//     // ✅ Updated to latest available model
+//     const response = await client.chat.completions.create({
+//       model: "llama-3.3-70b-versatile",
+//       max_tokens: 1024,
+//       messages: [
+//         {
+//           role: "system",
+//           content: `You are "Oqulix Bot", a friendly and knowledgeable assistant. 
+// Answer strictly using only the provided document. 
+// Keep responses clear, brief, and directly answer the question without extra details. 
+// Respond only in ${language || "english"}. 
+// Use proper punctuation for natural Google TTS speech. 
+// When speaking in non-English languages, use natural conversational style and mix common English words where appropriate instead of literal dictionary translations. 
+// Consider the previous answer: ${previousAnswer}.`
+//         },
+//         {
+//           role: "user",
+//           content: `Document:\n${fileContent}\n\nQuestion: ${question}`
+//         }
+//       ]
+//     });
 
-    const answer = response.choices[0].message.content;
+//     const answer = response.choices[0].message.content;
 
-    // ✅ Return JSON just like Claude did
-    res.json({ answer });
+//     // ✅ Return JSON just like Claude did
+//     res.json({ answer });
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error processing request" });
-  }
-});
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: "Error processing request" });
+//   }
+// });
 
 // ===================== SERVER START =====================
 const PORT = process.env.PORT ?? 4000;
