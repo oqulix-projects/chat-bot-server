@@ -12,8 +12,10 @@ import speech from "@google-cloud/speech";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { fileURLToPath } from "url";
 import Anthropic from "@anthropic-ai/sdk";
+import Groq from 'groq-sdk';
 
 import fetch from "node-fetch";
+
 
 // firebase sdk
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
@@ -314,11 +316,17 @@ app.post("/askClaude", async (req, res) => {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // ✅ No streaming — just get full response
-    const response = await client.messages.create({
+    // ✅ STREAMING - get response chunks immediately
+    const stream = await client.messages.stream({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
-      system: `You are 'Oqulix Bot,' a friendly and knowledgeable virtual assistant who acts according to the data in the provided document. Your answers must be based strictly on the provided document. Respond clearly and briefly wiht less words conveying the answer to the question only and not responding with too much information. Only speak in ${language || "english"}. Consider previous answer: ${previousAnswer}. also structure your answer with punctuations accordingly for google TTS to recognize and speak`,
+      system: `You are "Oqulix Bot", a friendly and knowledgeable assistant. 
+Answer strictly using only the provided document. 
+Keep responses clear, brief,small and directly answer the question without extra details. Dont speak with too much words.
+Respond only in ${language || "english"}. 
+Use proper punctuation for natural Google TTS speech. 
+When speaking in non-English languages, use natural conversational style and mix common English words where appropriate instead of literal dictionary translations. 
+Consider the previous answer: ${previousAnswer}.`,
       messages: [
         {
           role: "user",
@@ -327,10 +335,29 @@ app.post("/askClaude", async (req, res) => {
       ]
     });
 
-    const answer = response.content[0].text;
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    // ✅ Return JSON just like OpenAI did
-    res.json({ answer });
+    let fullAnswer = "";
+
+    stream.on('text', (text) => {
+      fullAnswer += text;
+      console.log("🟢 Chunk received:", text); // ✅ Console log each chunk
+      res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+    });
+
+    stream.on('end', () => {
+      console.log("✅ Full answer:", fullAnswer); // ✅ Final answer
+      res.write(`data: ${JSON.stringify({ done: true, answer: fullAnswer })}\n\n`);
+      res.end();
+    });
+
+    stream.on('error', (err) => {
+      console.error("Stream error:", err);
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+      res.end();
+    });
 
   } catch (err) {
     console.error(err);
@@ -338,6 +365,51 @@ app.post("/askClaude", async (req, res) => {
   }
 });
 
+// asking groq
+app.post("/askGroq", async (req, res) => {
+  try {
+    const { question, userId, language, previousAnswer } = req.body;
+
+    const filePath = `instances/${userId}.json`;
+    const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
+    const fileContent = fileBuffer.toString("utf-8");
+
+    const client = new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    });
+
+    // ✅ Updated to latest available model
+    const response = await client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "system",
+          content: `You are "Oqulix Bot", a friendly and knowledgeable assistant. 
+Answer strictly using only the provided document. 
+Keep responses clear, brief, and directly answer the question without extra details. 
+Respond only in ${language || "english"}. 
+Use proper punctuation for natural Google TTS speech. 
+When speaking in non-English languages, use natural conversational style and mix common English words where appropriate instead of literal dictionary translations. 
+Consider the previous answer: ${previousAnswer}.`
+        },
+        {
+          role: "user",
+          content: `Document:\n${fileContent}\n\nQuestion: ${question}`
+        }
+      ]
+    });
+
+    const answer = response.choices[0].message.content;
+
+    // ✅ Return JSON just like Claude did
+    res.json({ answer });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error processing request" });
+  }
+});
 
 // ===================== SERVER START =====================
 const PORT = process.env.PORT ?? 4000;
