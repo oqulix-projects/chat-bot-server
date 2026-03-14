@@ -318,8 +318,27 @@ async function getVoiceIdByName(voiceName, apiKey) {
 
 // ===================== GLOBAL SHOWROOM DETAILS =====================
 
+// ===================== GLOBAL SHOWROOM DETAILS =====================
+
 let productIndex = [];
-let showroomDetails = {};
+let showroomDetails = {
+  name: "My G",
+  legal_name: "myG Digital / myG (formerly 3G Mobile World)",
+  founded: 2006,
+  about: "Kerala-headquartered consumer electronics retail chain operating 100+ showrooms across Kerala.",
+  headquarters: "Kozhikode, Kerala, India",
+  website: "https://www.myg.in",
+  categories: ["Mobile phones", "Laptops & PCs", "Mobile accessories", "Televisions", "Home appliances", "Kitchen appliances"],
+  ground_floor: {
+    left: "Mobiles, Laptops, Mobile Accessories",
+    center: "Demo desk",
+    right: "Entertainment, TVs, Music"
+  },
+  first_floor: "Washing Machines, Refrigerators, AC, Kitchen Appliances, Chimneys, Gas Stoves",
+  services: ["EMI", "Extended Warranties", "Installation", "Exchange Offers", "Tech Support"],
+  bot_location: "Standing near central demo desk on ground floor"
+};
+
 let indexingComplete = false;
 
 // Load and index products WITH showroom details
@@ -332,33 +351,50 @@ async function indexProducts() {
       return false;
     }
     
-    const filePath = 'instances/VflBi4102DXStnEfB2zB3acxwYV2.json';
+    const filePath = 'instances/9PiH0MEy0cT88deS0R9jqv3HmQF2.json';
     
     console.log(`📂 Fetching: ${filePath}`);
     const [fileBuffer] = await admin.storage().bucket().file(filePath).download();
     const fileContent = fileBuffer.toString("utf-8");
     const data = JSON.parse(fileContent);
 
-    // ✅ Extract showroom details (FIRST object or dedicated field)
-    if (data.showroomDetails) {
-      showroomDetails = data.showroomDetails;
-      console.log(`✅ Loaded showroom: ${showroomDetails.name}`);
+    // ✅ Extract showroom details (check multiple places)
+    if (data.showroomDetails && Object.keys(data.showroomDetails).length > 0) {
+      console.log("✅ Found showroom details in JSON");
+      showroomDetails = { ...showroomDetails, ...data.showroomDetails };
+    } else if (data[0] && data[0].showroomDetails) {
+      console.log("✅ Found showroom details in first array element");
+      showroomDetails = { ...showroomDetails, ...data[0].showroomDetails };
     } else {
-      console.warn("⚠️  No showroom details found in JSON");
-      showroomDetails = {};
+      console.log("ℹ️  Using default showroom details");
     }
 
-    // ✅ Extract products
-    const products = data.products || [];
+    console.log(`📍 Showroom: ${showroomDetails.name}`);
+    console.log(`📍 Location: ${showroomDetails.headquarters}`);
+
+    // ✅ Extract products (handle both array and object with products field)
+    let products = [];
+    
+    if (Array.isArray(data)) {
+      // If data is array, filter out showroom details and use rest as products
+      products = data.filter(item => !item.showroomDetails && item.Product);
+    } else if (data.products && Array.isArray(data.products)) {
+      // If data has products field
+      products = data.products;
+    } else if (data.data && Array.isArray(data.data)) {
+      // If data has data field
+      products = data.data;
+    }
+
     console.log(`✅ Loaded ${products.length} products from Firebase`);
 
     // Create searchable index
     productIndex = products.map(product => ({
       ...product,
-      searchText: `${product.Product} ${product.Brand} ${product['Item Name']}`.toLowerCase()
-    }));
+      searchText: `${product.Product || ''} ${product.Brand || ''} ${product['Item Name'] || ''}`.toLowerCase()
+    })).filter(p => p.Product && p.Brand && p['Item Name']); // Only valid products
 
-    console.log(`✅ Indexed ${productIndex.length} products`);
+    console.log(`✅ Indexed ${productIndex.length} valid products`);
     
     // Show categories
     const categoryStats = {};
@@ -375,7 +411,9 @@ async function indexProducts() {
   } catch (err) {
     console.error("❌ Error indexing:", err.message);
     console.error(err);
-    return false;
+    // Still mark as complete with defaults
+    indexingComplete = true;
+    return true;
   }
 }
 
@@ -388,34 +426,78 @@ const categoryAliases = {
   'smartphone': 'MOBILE',
   'iphone': 'MOBILE',
   'samsung': 'MOBILE',
+  'oneplus': 'MOBILE',
+  'xiaomi': 'MOBILE',
+  'redmi': 'MOBILE',
+  'realme': 'MOBILE',
+  'vivo': 'MOBILE',
+  'oppo': 'MOBILE',
+  'google': 'MOBILE',
   
   'ac': ['AIR CONDITIONER', 'AC OUTDOOR'],
   'air': ['AIR CONDITIONER', 'AC OUTDOOR'],
   'cooler': ['AIR CONDITIONER', 'AC OUTDOOR'],
+  'conditioner': ['AIR CONDITIONER', 'AC OUTDOOR'],
   
   'laptop': 'LAPTOP',
   'computer': 'LAPTOP',
+  'dell': 'LAPTOP',
+  'hp': 'LAPTOP',
+  'lenovo': 'LAPTOP',
+  'asus': 'LAPTOP',
+  'macbook': 'LAPTOP',
   
   'tv': 'TV',
   'television': 'TV',
+  'display': 'TV',
+  'oled': 'TV',
+  'qled': 'TV',
   
   'washing': 'WASHING MACHINES',
   'washer': 'WASHING MACHINES',
+  'laundry': 'WASHING MACHINES',
   
   'fridge': 'REFRIGERATORS',
   'refrigerator': 'REFRIGERATORS',
+  'cool': 'REFRIGERATORS',
   
   'watch': 'SMART WATCH',
+  'smartwatch': 'SMART WATCH',
+  'wearable': 'SMART WATCH',
+  
   'earbuds': 'EARBUDS',
+  'headphones': 'EARBUDS',
+  'buds': 'EARBUDS',
+  'airpods': 'EARBUDS',
+  
   'speaker': 'BT SPEAKERS',
+  'audio': 'BT SPEAKERS',
+  'sound': 'BT SPEAKERS',
+  'jbl': 'BT SPEAKERS',
+  'sony': 'BT SPEAKERS',
+  
+  'tablet': 'TABLET',
+  'ipad': 'TABLET',
+  
+  'microwave': 'MICROWAVE OVEN',
+  'oven': 'MICROWAVE OVEN',
+  
+  'printer': 'PRINTER',
+  'chimney': 'KITCHEN APPLIANCES',
+  'stove': 'KITCHEN APPLIANCES',
+  'kitchen': 'KITCHEN APPLIANCES',
 };
 
 // ===================== SEARCH FUNCTION =====================
 
 function searchProducts(query) {
-  if (!indexingComplete || !productIndex || productIndex.length === 0) {
-    console.log("❌ Product index not ready yet!");
-    return { products: [], showroom: {} };
+  if (!indexingComplete) {
+    console.log("⚠️  Indexing still in progress, using defaults...");
+  }
+
+  if (!productIndex || productIndex.length === 0) {
+    console.log("❌ No products indexed, returning empty results");
+    return { products: [], showroom: showroomDetails };
   }
 
   const queryLower = query.toLowerCase();
@@ -444,12 +526,14 @@ function searchProducts(query) {
     const brandLower = (product.Brand || '').toLowerCase();
     const categoryLower = (product.Product || '').toLowerCase();
 
+    // Category match
     if (targetCategories.size > 0) {
       if (targetCategories.has(product.Product)) {
         score += 200;
       }
     }
 
+    // Brand match
     if (brandLower) {
       words.forEach(word => {
         if (brandLower.includes(word)) {
@@ -458,6 +542,7 @@ function searchProducts(query) {
       });
     }
 
+    // Item name match
     if (productLower) {
       words.forEach(word => {
         const count = (productLower.match(new RegExp(word, 'g')) || []).length;
@@ -495,7 +580,6 @@ function searchProducts(query) {
       console.log(`   Category: ${product.Product}\n`);
     });
 
-    // ✅ Return products AND showroom details
     return { products: randomProducts, showroom: showroomDetails };
   }
 
@@ -505,11 +589,10 @@ function searchProducts(query) {
   });
   console.log("");
 
-  // ✅ Return products AND showroom details
   return { products: results, showroom: showroomDetails };
 }
 
-// ===================== UPDATED: askClaude with Showroom Details =====================
+// ===================== UPDATED: askClaude =====================
 
 app.post("/askClaude", async (req, res) => {
   try {
@@ -521,36 +604,27 @@ app.post("/askClaude", async (req, res) => {
     console.log(`🌐 Language: ${language}`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
-    if (!indexingComplete) {
-      console.log("⚠️  Still loading...");
-      await new Promise(r => setTimeout(r, 1000));
-      
-      if (!indexingComplete) {
-        return res.status(503).json({ error: "Product index still loading. Please try again." });
-      }
-    }
-
-    // ✅ Get BOTH products AND showroom details
-    const { products: relevantProducts, showroom } = searchProducts(question);
+    // ✅ Get BOTH products AND showroom details (with safety checks)
+    const { products: relevantProducts = [], showroom = showroomDetails } = searchProducts(question);
     
-    // Format showroom context
+    // ✅ Format showroom context with defaults
     const showroomContext = `
-Showroom: ${showroom.name}
-Location: ${showroom.headquarters}
-Ground Floor: ${showroom.ground_floor?.left} (left), ${showroom.ground_floor?.center} (center), ${showroom.ground_floor?.right} (right)
-First Floor: ${showroom.first_floor}
-Services: ${showroom.services?.join(', ')}
-Website: ${showroom.website}
+Showroom: ${showroom?.name || "My G"}
+Location: ${showroom?.headquarters || "Kozhikode, Kerala"}
+Ground Floor (from left): ${showroom?.ground_floor?.left || "Mobiles, Laptops, Accessories"} | Center: Demo desk | Right: ${showroom?.ground_floor?.right || "TVs, Entertainment"}
+First Floor: ${showroom?.first_floor || "Appliances"}
+Services: ${showroom?.services?.join(', ') || "EMI, Installation, Warranties"}
+Bot Location: ${showroom?.bot_location || "Ground floor near demo desk"}
 `;
 
     // Format products context
     const productContext = relevantProducts.length > 0
-      ? "Relevant Products:\n" + relevantProducts.map(p => 
-          `- ${p.Brand} ${p['Item Name']} (${p.Product}) - ₹${p.MOP}`
+      ? "Available Products:\n" + relevantProducts.map(p => 
+          `- ${p.Brand || 'Unknown'} ${p['Item Name'] || 'Unknown'} (${p.Product || 'Unknown'})${p.MOP ? ` - ₹${p.MOP}` : ''}`
         ).join("\n")
-      : "No specific products found.";
+      : "Browse our sections for more products.";
 
-    const fullContext = `${showroomContext}\n\n${productContext}`;
+    const fullContext = `${showroomContext}\n${productContext}`;
 
     console.log("📤 Sending to Claude:");
     console.log(fullContext);
@@ -561,15 +635,15 @@ Website: ${showroom.website}
     const stream = await client.messages.stream({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
-      system: `You are "Oqulix Bot", a friendly sales assistant at My G showroom.
-You help customers find products from our inventory and provide showroom information.
-You are standing on the ground floor near the demo desk.
-Ground floor left: Mobiles, Laptops, Accessories
-Ground floor right: TVs, Entertainment, Music
-First floor upstairs: Washing Machines, Refrigerators, AC, Kitchen Appliances
-Be helpful, concise, and guide customers to the right section.
+      system: `You are "Oqulix Bot", a friendly sales assistant at My G showroom in Kozhikode, Kerala.
+You stand on the ground floor near the demo desk facing the showroom.
+LEFT side: Mobiles, Laptops, Mobile Accessories
+RIGHT side: TVs, Entertainment, Music, Speakers
+UPSTAIRS (First Floor): Washing Machines, Refrigerators, AC, Kitchen Appliances, Chimneys, Gas Stoves
+You offer: EMI options, Extended Warranties, Installation Services, Exchange Offers, Tech Support
+Be helpful, guide customers to the right section, mention products by brand and price when available.
 Respond only in ${language || "english"}.
-Use proper punctuation for natural Google TTS speech. Strictly do not use emojis in reply. Stricly keep messages very short unless necessary and provide only necessary information`,
+Use proper punctuation for natural Google TTS speech.Strictly do not use emojis in reply. Stricly keep messages very short unless necessary and provide only necessary information`,
       messages: [
         {
           role: "user",
@@ -616,7 +690,7 @@ const PORT = process.env.PORT ?? 4000;
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on http://0.0.0.0:${PORT}\n`);
-  indexProducts();
+  indexProducts(); // Non-blocking, loads in background
 });
 
 
