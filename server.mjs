@@ -821,7 +821,7 @@ Mention brands, prices, and features when available.
 Ground floor LEFT: Mobiles, Laptops. RIGHT: TVs, Entertainment.
 First floor: Appliances (AC, Washing Machines, Fridges, etc.)
 Offer: EMI, Installation, Warranty, Exchange.
-Respond only in English. Keep response concise. Use proper punctuation for TTS.`;
+Respond only in English. Keep response concise. Use proper punctuation for TTS.Do not use emojis, do not use ":" or unwanted punctuations because google tts cant read it. Keep answers much short and elaborate only if necessary`;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
