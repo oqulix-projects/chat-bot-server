@@ -736,16 +736,40 @@ async function getVoiceIdByName(voiceName, apiKey) {
   }
 }
 
+// ===================== TRANSLATION HELPER =====================
+
+// Translate any text using Claude (fast, single call, no streaming)
+async function translateWithClaude(text, fromLang, toLang) {
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 512,
+      messages: [{
+        role: "user",
+        content: `Translate the following ${fromLang} text to ${toLang}. Return ONLY the translated text, no explanations, no quotes.\n\n${text}`
+      }]
+    });
+    const translated = response.content[0]?.text?.trim() || text;
+    console.log(`🔄 Translated [${fromLang} → ${toLang}]: "${text}" → "${translated}"`);
+    return translated;
+  } catch (err) {
+    console.error("Translation error:", err.message);
+    return text; // Fallback: return original if translation fails
+  }
+}
+
 // ===================== CLAUDE ASK ENDPOINT =====================
 
 app.post("/askClaude", async (req, res) => {
   try {
     const { question, userId, language } = req.body;
+    const isMalayalam = language === 'malayalam';
 
     console.log("\n" + "=".repeat(70));
     console.log("🤖 NEW REQUEST");
-    console.log(`❓ ${question}`);
-    console.log(`🌐 ${language}`);
+    console.log(`❓ Original: ${question}`);
+    console.log(`🌐 Language: ${language}`);
     console.log("=".repeat(70));
 
     if (!indexingComplete) {
@@ -755,10 +779,19 @@ app.post("/askClaude", async (req, res) => {
       }
     }
 
-    // Detect intent and find products
-    const { products: relevantProducts = [], showroom } = searchProducts(question);
+    // ── STEP 1: Translate Malayalam input → English for keyword matching ──
+    let searchQuery = question;
+    if (isMalayalam) {
+      console.log("\n🔄 STEP 1: Translating Malayalam → English for search...");
+      searchQuery = await translateWithClaude(question, "Malayalam", "English");
+      console.log(`✅ English query: "${searchQuery}"`);
+    }
 
-    // Format context
+    // ── STEP 2: Search products using English keywords ──
+    console.log("\n🔍 STEP 2: Searching products...");
+    const { products: relevantProducts = [], showroom } = searchProducts(searchQuery);
+
+    // ── STEP 3: Build English context for Claude ──
     const showroomContext = `
 Showroom Information:
 - Name: ${showroom.name || 'My G'}
@@ -777,54 +810,81 @@ Showroom Information:
 
     const fullContext = `${showroomContext}\n\n${productContext}`;
 
-    console.log("\n📤 Sending to Claude...\n");
+    // ── STEP 4: Generate English response with Claude (streaming) ──
+    console.log("\n📤 STEP 4: Generating English response from Claude...");
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const systemPrompt = language === 'malayalam' 
-      ? `നിങ്ങൾ "Oqulix Bot" ആണ്, My G ഷോരൂമിന്റെ സൗജന്യ സഹായി.
-കസ്റ്റമർ പ്രതിനിധി എന്ന നിലയിൽ സ്നേഹത്തോടെയും സഹായകരമായും പ്രതികരിക്കുക.
-ഭാഷ മലയാളമായിരിക്കണം. പ്രോഡക്ട് വിവരങ്ങൾ നൽകുക. Do not use emojis, do not use ":" or unwanted punctuations because google tts cant read it. Keep answers much short and elaborate only if necessary`
-      : `You are "Oqulix Bot", friendly sales assistant at My G showroom in Kozhikode.
+    const systemPrompt = `You are "Oqulix Bot", friendly sales assistant at My G showroom in Kozhikode.
 Be helpful and guide customers to right products and locations.
 Mention brands, prices, and features when available.
 Ground floor LEFT: Mobiles, Laptops. RIGHT: TVs, Entertainment.
 First floor: Appliances (AC, Washing Machines, Fridges, etc.)
 Offer: EMI, Installation, Warranty, Exchange.
-Respond only in English. Do not use emojis, do not use ":" or unwanted punctuations because google tts cant read it. Keep answers much short and elaborate only if necessary`;
-
-    const stream = await client.messages.stream({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{
-        role: "user",
-        content: `${fullContext}\n\nCustomer: ${question}`
-      }]
-    });
+Respond only in English. Keep response concise. Use proper punctuation for TTS.`;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    let fullAnswer = "";
+    if (isMalayalam) {
+      // For Malayalam: collect full English response first, then translate, then send
+      console.log("\n🔄 Malayalam mode: collecting full response before translating...");
 
-    stream.on('text', (text) => {
-      fullAnswer += text;
-      res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
-    });
+      const response = await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{
+          role: "user",
+          content: `${fullContext}\n\nCustomer question (translated from Malayalam): ${searchQuery}\nOriginal Malayalam question: ${question}`
+        }]
+      });
 
-    stream.on('end', () => {
-      console.log("✅ Response sent\n");
-      res.write(`data: ${JSON.stringify({ done: true, answer: fullAnswer })}\n\n`);
+      const englishAnswer = response.content[0]?.text?.trim() || "";
+      console.log(`✅ English answer: "${englishAnswer}"`);
+
+      // ── STEP 5: Translate English response → Malayalam ──
+      console.log("\n🔄 STEP 5: Translating English response → Malayalam...");
+      const malayalamAnswer = await translateWithClaude(englishAnswer, "English", "Malayalam");
+      console.log(`✅ Malayalam answer: "${malayalamAnswer}"`);
+
+      // Send translated Malayalam answer as a single chunk
+      res.write(`data: ${JSON.stringify({ chunk: malayalamAnswer })}\n\n`);
+      res.write(`data: ${JSON.stringify({ done: true, answer: malayalamAnswer, englishAnswer })}\n\n`);
       res.end();
-    });
 
-    stream.on('error', (err) => {
-      console.error("Error:", err);
-      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-      res.end();
-    });
+    } else {
+      // For English: stream response directly as before
+      const stream = await client.messages.stream({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{
+          role: "user",
+          content: `${fullContext}\n\nCustomer: ${question}`
+        }]
+      });
+
+      let fullAnswer = "";
+
+      stream.on('text', (text) => {
+        fullAnswer += text;
+        res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+      });
+
+      stream.on('end', () => {
+        console.log("✅ Response sent\n");
+        res.write(`data: ${JSON.stringify({ done: true, answer: fullAnswer })}\n\n`);
+        res.end();
+      });
+
+      stream.on('error', (err) => {
+        console.error("Error:", err);
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.end();
+      });
+    }
 
   } catch (err) {
     console.error(err);
